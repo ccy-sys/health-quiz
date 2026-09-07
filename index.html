@@ -219,57 +219,66 @@
 </div>
 
 <script>
-    function calculateScore() {
-        const form = document.getElementById('quizForm');
-        let totalScore = 0;
-        let answeredCount = 0;
+function calculateScore() {
+    const form = document.getElementById('quizForm');
+    let totalScore = 0;
+    let answeredCount = 0;
+    let responses = {};
 
-        // 計算 10 題的分數
-        for (let i = 1; i <= 10; i++) {
-            const options = form.elements[`q${i}`];
-            for (let option of options) {
-                if (option.checked) {
-                    totalScore += parseInt(option.value);
-                    answeredCount++;
-                    break;
-                }
+    for (let i = 1; i <= 10; i++) {
+        const options = form.elements[`q${i}`];
+        for (let option of options) {
+            if (option.checked) {
+                const val = parseInt(option.value);
+                totalScore += val;
+                responses[`q${i}`] = val; // 記錄每題得分
+                answeredCount++;
+                break;
             }
         }
-
-        // 檢查是否所有題目都已填寫
-        if (answeredCount < 10) {
-            alert('請回答所有題目後再提交！');
-            return;
-        }
-
-        // 顯示結果
-        const resultDiv = document.getElementById('result');
-        resultDiv.style.display = 'block';
-
-        let ratingClass = '';
-        let title = '';
-        let advice = '';
-
-        if (totalScore >= 25) {
-            ratingClass = 'high-score';
-            title = '🌟 健康達人（' + totalScore + ' 分）';
-            advice = '<strong>表現優異！</strong> 你的生活習慣非常健康，懂得平衡學業與身心發展。請繼續保持規律作息和良好心態，你是同學們的好榜樣！';
-        } else if (totalScore >= 18) {
-            ratingClass = 'mid-score';
-            title = '⚠️ 表現平穩（' + totalScore + ' 分）';
-            advice = '<strong>整體不錯，但有進步空間。</strong> 你可能在某幾個方面（如睡眠不足或少運動）需要稍微調整。試著找出答題中得分較低的項目，設定小目標逐步改善。';
-        } else {
-            ratingClass = 'low-score';
-            title = '🚨 健康亮紅燈（' + totalScore + ' 分）';
-            advice = '<strong>需要立即關注！</strong> 你的生活方式可能已經對身體或情緒造成負擔。建議先從「保證睡眠」和「減少含糖飲料」開始改變，若感到壓力過大，請務必向信任的成年人尋求協助。';
-        }
-
-        resultDiv.className = ratingClass;
-        resultDiv.innerHTML = `<div class="result-title">${title}</div><div>${advice}</div>`;
-        
-        // 自動平滑滾動到結果區域
-        resultDiv.scrollIntoView({ behavior: 'smooth' });
     }
+
+    if (answeredCount < 10) {
+        alert('請回答所有題目後再提交！');
+        return;
+    }
+
+    // --- 發送數據至 Google 試算表 ---
+    const webAppUrl = https://script.google.com/macros/s/AKfycbzeoOgKJEr_h4vTNDO81LHNuK2Jmz4LqXv4gxT4vRPKLZWdBLiWrmAcJmtaW1eFHGuM/exec; // 貼上你的 Google Apps Script URL
+    responses.totalScore = totalScore;
+
+    fetch(webAppUrl, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(responses)
+    }).then(() => {
+        console.log('數據已成功傳送至 Google 試算表');
+    }).catch(err => console.error('傳送失敗:', err));
+
+    // --- 原本的結果顯示邏輯 ---
+    const resultDiv = document.getElementById('result');
+    resultDiv.style.display = 'block';
+
+    let ratingClass = '', title = '', advice = '';
+    if (totalScore >= 25) {
+        ratingClass = 'high-score';
+        title = '🌟 健康達人（' + totalScore + ' 分）';
+        advice = '<strong>表現優異！</strong> 你的生活習慣非常健康，懂得平衡學業與身心發展。';
+    } else if (totalScore >= 18) {
+        ratingClass = 'mid-score';
+        title = '⚠️ 表現平穩（' + totalScore + ' 分）';
+        advice = '<strong>整體不錯，但有進步空間。</strong> 你可能在某幾個方面需要稍微調整。';
+    } else {
+        ratingClass = 'low-score';
+        title = '🚨 健康亮紅燈（' + totalScore + ' 分）';
+        advice = '<strong>需要數量關注！</strong> 你的生活方式可能已經對身體或情緒造成負擔。';
+    }
+
+    resultDiv.className = ratingClass;
+    resultDiv.innerHTML = `<div class="result-title">${title}</div><div>${advice}</div>`;
+    resultDiv.scrollIntoView({ behavior: 'smooth' });
+}
 </script>
 
 </body>
